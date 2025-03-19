@@ -15,6 +15,7 @@ deep-translator = "^1.11.4"
 pdfplumber = "^0.11.5"
 docling = "1.20.0"
 openai = "^1.66.5"
+gradio-client = "^1.8.0"
 
 
 [build-system]
