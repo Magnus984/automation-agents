@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     url: str
     token: str
     openai_api_key: str
+    hugging_face_api_token: str
+    github_username: str
+    github_token: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
