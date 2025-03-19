@@ -15,6 +15,8 @@ from .lead_identifier import lead_identifier
 from .sales_outreach import sales_outreach_router
 from .screening_analyst import screening_analyst
 from .data_cleaning import data_cleaning
+from .email_reading_tools import email_reading
+from .location_components import location_component
 
 
 api_version_one.include_router(router)
@@ -30,3 +32,5 @@ api_version_one.include_router(lead_identifier)
 api_version_one.include_router(sales_outreach_router)
 api_version_one.include_router(screening_analyst)
 api_version_one.include_router(data_cleaning)
+api_version_one.include_router(email_reading)
+api_version_one.include_router(location_component)
