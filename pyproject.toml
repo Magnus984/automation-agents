@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "AUTOMATION-AGENTS"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = {extras = ["standard"], version = "^0.115.8"}
+loguru = "^0.7.3"
+pydantic-settings = "^2.8.0"
+pandas = "^2.2.3"
+openpyxl = "^3.1.5"
+requests = "^2.32.3"
+pymupdf4llm = "^0.0.17"
+deep-translator = "^1.11.4"
+pdfplumber = "^0.11.5"
+docling = "1.20.0"
+openai = "^1.66.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
