@@ -1,17 +1,24 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    project_title: str = "Automation Agents"
-    api_v1_str: str = "/api/v1"
-    url: str
-    token: str
-    openai_api_key: str
-    hugging_face_api_token: str
-    github_username: str
-    github_token: str
-    google_api_key: str
-    serpapi_key: str
-
+    PROJECT_TITLE: str = "Automation Agents"
+    API_V1_STR: str = "/api/v1"
+    URL: str
+    TOKEN: str
+    OPENAI_API_KEY: str
+    HUGGING_FACE_API_TOKEN: str
+    GITHUB_USERNAME: str
+    GITHUB_TOKEN: str
+    SERPAPI_KEY: str
+    RAPIDAPI_KEY: str
+    RAPIDAPI_HOST: str
+    LEAD_ENRICHMENT_KEY: str
+    GROQ_API_KEY: str
+    SMTP_SERVER: str
+    SMTP_PORT: str
+    SMTP_USERNAME: str
+    SMTP_PASSWORD: str
+    
     model_config = SettingsConfigDict(env_file=".env")
 
 

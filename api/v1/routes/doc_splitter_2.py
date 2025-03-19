@@ -24,7 +24,7 @@ doc_splitter_2 = APIRouter(tags=["Docs Splitter 2"])
 
 
 # Directory where all files will be saved for consolidation
-UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "./uploads_doc_splitter")
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "./uploads_doc_splitter_2")
 # Ensure the folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  
 

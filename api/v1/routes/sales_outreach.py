@@ -4,15 +4,16 @@ import requests
 import smtplib
 import json
 from email.mime.text import MIMEText
+from api.core.config import settings
 
 sales_outreach_router = APIRouter(tags=["Sales Outreach"])
 
 # Replace with your actual Groq API key and SMTP details
-GROQ_API_KEY = "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"
-# SMTP_SERVER = "smtp.gmail.com"
-# SMTP_PORT = 587
-# SMTP_USERNAME = "ccvosafo@gmail.com"
-# SMTP_PASSWORD = "yxla rwhr kxlp mtsd"
+GROQ_API_KEY = settings.GROQ_API_KEY
+SMTP_SERVER = settings.SMTP_SERVER
+SMTP_PORT = settings.SMTP_PORT
+SMTP_USERNAME = settings.SMTP_USERNAME
+SMTP_PASSWORD = settings.SMTP_PASSWORD
 
 # Input model
 class MessageRequest(BaseModel):
@@ -41,9 +42,10 @@ def generate_message(name: str, email: EmailStr, company_name: str, role: str, p
     # linkedin_url = "https://linkedin-data-api.p.rapidapi.com/"
     # querystring = {"username":linkedin_username}
 
-    # headers = {
-    #     "x-rapidapi-key": "b97ac7d537mshc947e075f1ff5a0p134b39jsnff97c7acd4b4",
-    #     "x-rapidapi-host": "linkedin-data-api.p.rapidapi.com"
+    # api_key = settings.rapidapi_key
+    # # headers = {
+    # #     "x-rapidapi-key": api_key,
+    # #     "x-rapidapi-host": "linkedin-data-api.p.rapidapi.com"
     # }
 
     # linkedin_response = requests.get(linkedin_url, headers=headers, params=querystring)
@@ -79,7 +81,7 @@ def generate_message(name: str, email: EmailStr, company_name: str, role: str, p
     )
     
     headers = {
-    'Authorization': 'Bearer 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',
+    'Authorization': f'Bearer {GROQ_API_KEY}',
     'Content-Type': 'application/json',
     }
     # print("linkedin_response:", linkedin_response.text)

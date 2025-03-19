@@ -15,8 +15,8 @@ backend_builder = APIRouter(tags=["Backend Builder"])
 #     password: str
 #     input_schema: dict  # Example: {"users": {"name": "str", "email": "str"}}
 
-# token = settings.github_token
-# username = settings.github_username
+# token = settings.GITHUB_TOKEN
+# username = settings.GITHUB_USERNAME
 # GITHUB_USERNAME = username
 # GITHUB_TOKEN = token
 REPO_NAME = "generated-fastapi-backends"

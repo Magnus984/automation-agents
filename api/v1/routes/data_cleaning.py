@@ -17,7 +17,7 @@ from api.core.config import settings
 load_dotenv()
 
 # api_key = os.environ.get("OPENAI_API_KEY")
-api_key = settings.openai_api_key
+api_key = settings.OPENAI_API_KEY
 
 client = OpenAI(api_key=api_key)
 

@@ -7,7 +7,7 @@ from api.core.config import settings
 
 
 screening_analyst = APIRouter(tags=["Screening Analyst"])
-token = settings.hugging_face_api_token
+token = settings.HUGGING_FACE_API_TOKEN
 API_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
 headers = {"Authorization": f"Bearer {token}"}
     

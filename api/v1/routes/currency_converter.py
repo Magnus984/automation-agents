@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from enum import Enum
 import requests
 from typing import Literal
+from api.core.config import settings
 
 currency_converter = APIRouter()
 
@@ -609,10 +610,13 @@ def convert_currency(amount: float, from_currency: Currency, to_currency: Curren
     url = "https://fast-price-exchange-rates.p.rapidapi.com/api/v1/convert"
 
     querystring = {"amount": amount, "base_currency": from_currency, "quote_currency": to_currency}
+    
+    rapidapi_key = settings.RAPIDAPI_KEY
+    host = settings.RAPIDAPI_HOST
 
     headers = {
-        "x-rapidapi-key": "b97ac7d537mshc947e075f1ff5a0p134b39jsnff97c7acd4b4",
-        "x-rapidapi-host": "fast-price-exchange-rates.p.rapidapi.com"
+        "x-rapidapi-key": rapidapi_key,
+        "x-rapidapi-host": host
     }
 
     response = requests.get(url, headers=headers, params=querystring)

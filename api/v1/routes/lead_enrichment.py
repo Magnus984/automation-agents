@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 import requests
+from api.core.config import settings
 
 lead_enrichment = APIRouter(tags=["Lead Enrichment"])
 
@@ -25,8 +26,10 @@ def find_leads(
             "title": target_role
         }
 
+        lead_enrichment_key = settings.LEAD_ENRICHMENT_KEY
+
         headers = {
-            "X-Access-Key": "1270079453OhtdiPJ1b9sHCrcLh6gBHCIkyZDplDnv",
+            "X-Access-Key": lead_enrichment_key,
             "Content-Type": "application/json"
         }
 

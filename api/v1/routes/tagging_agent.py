@@ -22,7 +22,7 @@ def tagging_agent(
     "parameters":{"candidate_labels": labels,  "multi_label": idkyet}}
 
     # Header for the POST request
-    token = settings.hugging_face_api_token
+    token = settings.HUGGING_FACE_API_TOKEN
     headers = {
     "Authorization": f"Bearer {token}"
     }
