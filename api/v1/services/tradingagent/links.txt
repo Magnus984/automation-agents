@@ -1,0 +1,1 @@
+['/#about', '/#solutions', '/#process', '/contact-us', '/', '/#about', '/#solutions', '/#process', '/contact-us', '/quest-ai', '/quest-ai', 'https://virtualkycanalyst.com', '/contact-us', '/contact-us', '/quest-ai', 'https://virtualkycanalyst.com', '#', 'mailto:info @4th-ir.com', 'https://www.linkedin.com/company/4th-ir/', 'https://twitter.com/ir_4th']
