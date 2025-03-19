@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     hugging_face_api_token: str
     github_username: str
     github_token: str
+    google_api_key: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
