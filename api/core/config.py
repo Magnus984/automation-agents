@@ -4,7 +4,6 @@ class Settings(BaseSettings):
     PROJECT_TITLE: str = "Automation Agents"
     API_V1_STR: str = "/api/v1"
     URL: str
-    TOKEN: str
     OPENAI_API_KEY: str
     HUGGING_FACE_API_TOKEN: str
     GITHUB_USERNAME: str
@@ -18,6 +17,7 @@ class Settings(BaseSettings):
     SMTP_PORT: str
     SMTP_USERNAME: str
     SMTP_PASSWORD: str
+    GOOGLE_API_KEY: str
     
     model_config = SettingsConfigDict(env_file=".env")
 
