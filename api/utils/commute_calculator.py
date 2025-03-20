@@ -6,7 +6,7 @@ def calculate_commute_cost(start_lat, start_lon, end_lat, end_lon, cost_per_km, 
     Uses Google Maps API to calculate the route-based commute cost.
     """
     url = "https://maps.googleapis.com/maps/api/directions/json"
-    api_key = settings.google_api_key
+    api_key = settings.GOOGLE_API_KEY
     params = {
         "origin": f"{start_lat},{start_lon}",
         "destination": f"{end_lat},{end_lon}",
