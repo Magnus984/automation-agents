@@ -27,7 +27,7 @@ data_cleaning = APIRouter(tags=["Data Cleaning"])
 # def health():
 #     return {"status": "OK"}
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "uploads_data_cleaning"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Store both DataFrame and metadata
@@ -37,7 +37,7 @@ class CommandRequest(BaseModel):
     uuid: str
     command: str
 
-@data_cleaning.post("/upload/")
+@data_cleaning.post("/upload-file/")
 async def upload_csv(file: UploadFile = File(...)):
     try:
         file_extension = os.path.splitext(file.filename)[-1].lower()
