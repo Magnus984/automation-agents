@@ -1,6 +1,10 @@
 [tool.poetry]
 name = "AUTOMATION-AGENTS"
 version = "0.1.0"
+authors = ["Magnus Tetteh <tettehmagnus35@gmail.com>"]
+description = ""
+readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
