@@ -4,7 +4,7 @@ from loguru import logger
 from api.core.config import settings
 from api.v1.schemas.table_question_answering import ModelRequest
 
-HEADERS = {"Authorization": f"Bearer {settings.token}"}
+HEADERS = {"Authorization": f"Bearer {settings.hugging_face_api_token}"}
 
 
 async def query_model(request: ModelRequest):
