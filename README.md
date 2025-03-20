@@ -1,7 +1,5 @@
 # Automation Agents
 
-Welcome to the project documentation. This README is designed to provide a comprehensive overview of the project, including its structure, key features, installation instructions, and more.
-
 ## Introduction
 
 This project is a consolidation of various automation utilities and services. It includes a range of functionalities such as data cleaning, currency conversion, and more, all accessible through a RESTful API.
