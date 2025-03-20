@@ -4,7 +4,7 @@ from api.v1.routes import api_version_one
 from api.core.config import settings
 import uvicorn
 
-app = FastAPI(title=settings.project_title)
+app = FastAPI(title=settings.PROJECT_TITLE)
 
 app.add_middleware(
     CORSMiddleware,
