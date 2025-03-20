@@ -4,6 +4,7 @@ from api.core.config import settings
 
 lead_identifier = APIRouter(tags=["Lead Identifier"])
 
+
 @lead_identifier.get("/lead_identifier")
 def find_companies(
     location: str = Query(..., description="Company location"),
