@@ -6,7 +6,7 @@ def get_coordinates(address):
     Converts an address to latitude and longitude using Google Maps API.
     """
     url = "https://maps.googleapis.com/maps/api/geocode/json"
-    api_key = settings.google_api_key
+    api_key = settings.GOOGLE_API_KEY
     params = {
         "address": address,
         "key": f"{api_key}"
