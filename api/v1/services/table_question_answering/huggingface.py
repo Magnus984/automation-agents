@@ -4,15 +4,15 @@ from loguru import logger
 from api.core.config import settings
 from api.v1.schemas.table_question_answering import ModelRequest
 
-HEADERS = {"Authorization": f"Bearer {settings.hugging_face_api_token}"}
+HEADERS = {"Authorization": f"Bearer {settings.HUGGING_FACE_API_TOKEN}"}
 
 
 async def query_model(request: ModelRequest):
     async with AsyncClient(timeout=None) as client:
         try:
-            logger.info("Sending request to model with URL: {}", settings.url)
+            logger.info("Sending request to model with URL: {}", settings.URL)
             response = await client.post(
-                url=settings.url, json={"input": request.model_dump()}, headers=HEADERS
+                url=settings.URL, json={"input": request.model_dump()}, headers=HEADERS
             )
             response.raise_for_status()
             logger.info("Received response: {}", response.json())
