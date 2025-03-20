@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Query
 import requests
+from api.core.config import settings
 
 lead_identifier = APIRouter(tags=["Lead Identifier"])
 
-SERPAPI_KEY = "1b98b08bfe39cbdd9462dffb17fb0d8ce7156e319d77d82837f7c9bf97842cb9"
 
 @lead_identifier.get("/lead_identifier")
 def find_companies(
@@ -17,11 +17,12 @@ def find_companies(
     """
     search_query = f"{industry} companies in {location} with {company_size} employees using {technology}"
     
+    api_key = settings.serpapi_key
     url = "https://serpapi.com/search"
     params = {
         "engine": "google",
         "q": search_query,
-        "api_key": SERPAPI_KEY
+        "api_key": api_key
     }
 
     response = requests.get(url, params=params)

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     github_username: str
     github_token: str
     google_api_key: str
+    serpapi_key: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
