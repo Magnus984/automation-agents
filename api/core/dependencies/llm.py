@@ -6,7 +6,7 @@ from api.core.config import settings
 load_dotenv()
 
 #client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
-client = OpenAI(api_key=settings.openai_api_key)
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 def analyze_emails(emails, question):
