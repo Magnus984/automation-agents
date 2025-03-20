@@ -17,6 +17,7 @@ from .screening_analyst import screening_analyst
 from .data_cleaning import data_cleaning
 from .email_reading_tools import email_reading
 from .location_components import location_component
+from .rag_system import rag_system
 
 
 api_version_one.include_router(router)
@@ -34,3 +35,4 @@ api_version_one.include_router(screening_analyst)
 api_version_one.include_router(data_cleaning)
 api_version_one.include_router(email_reading)
 api_version_one.include_router(location_component)
+api_version_one.include_router(rag_system)
