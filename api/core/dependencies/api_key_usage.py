@@ -26,8 +26,7 @@ def send_report(
         "client": client,
         "model_identifier": endpoint,
     }
-    print("Payload: ", payload)
-    print("token: ", auth["access_token"])
+
     try:
         response = requests.post(
             f"{settings.ACCOUNTS_SERVICE_URL}/api/v1/api_keys/report_usage",
