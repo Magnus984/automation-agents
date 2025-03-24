@@ -1,18 +1,20 @@
 from re import S
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import FileResponse, JSONResponse
 import os
 import uuid
 import pandas as pd
 from pydantic import BaseModel
 from openai import OpenAI
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from datetime import datetime
 import numpy as np
 import tempfile
 from dotenv import load_dotenv
 import os
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
 
 load_dotenv()
 
@@ -38,7 +40,10 @@ class CommandRequest(BaseModel):
     command: str
 
 @data_cleaning.post("/upload-file/")
-async def upload_csv(file: UploadFile = File(...)):
+async def upload_csv(
+    file: UploadFile = File(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         file_extension = os.path.splitext(file.filename)[-1].lower()
         file_uuid = str(uuid.uuid4())
@@ -91,6 +96,19 @@ async def upload_csv(file: UploadFile = File(...)):
             "metadata": metadata
         }
 
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /upload-file",
+            )
+            
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+
         return JSONResponse(content={
             "message": "File uploaded successfully",
             "uuid": file_uuid,
@@ -101,7 +119,10 @@ async def upload_csv(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @data_cleaning.post("/process/")
-async def process_command(request: CommandRequest):
+async def process_command(
+    request: CommandRequest,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         entry = data_store.get(request.uuid)
         if not entry:
@@ -172,6 +193,19 @@ async def process_command(request: CommandRequest):
             modified_df = local_vars['df']
             data_store[request.uuid]["df"] = modified_df
 
+            if auth["is_valid"]:
+                report = send_report(
+                    auth,
+                    auth['client'],
+                    "POST /process",
+                )
+
+                if report.status == "error":
+                    raise HTTPException(
+                        status_code=report.status_code,
+                        detail=report.data.error
+                    )
+
             return JSONResponse(content={
                 "message": "Command executed successfully",
                 "generated_code": code_line,
@@ -193,7 +227,10 @@ from fastapi.responses import FileResponse
 
 # Modified download endpoint
 @data_cleaning.get("/download/{file_uuid}")
-async def download_processed_file(file_uuid: str):
+async def download_processed_file(
+    file_uuid: str,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         entry = data_store.get(file_uuid)
         if not entry:
@@ -207,6 +244,19 @@ async def download_processed_file(file_uuid: str):
             # Save DataFrame to temporary CSV
             df.to_csv(temp_file.name, index=False)
             
+            if auth["is_valid"]:
+                report = send_report(
+                    auth,
+                    auth['client'],
+                    "GET /download",
+                )
+
+                if report.status == "error":
+                    raise HTTPException(
+                        status_code=report.status_code,
+                        detail=report.data.error
+                    )
+
             # Return the temporary file as response
             return FileResponse(
                 temp_file.name,

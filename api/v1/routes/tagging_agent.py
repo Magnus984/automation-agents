@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, Depends, HTTPException
 import requests
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Dict, Union
 
 
 fourth_ir_tagging_agent = APIRouter(tags=["4th-IR Tagging Agent"])
@@ -12,7 +15,8 @@ url = "https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnl
 def tagging_agent(
     Text: str = Body(..., description="The input text to be analyzed"),
     Tags: str = Query(..., description="Comma-separated list of tags"),
-    Threshold: float = Query(0.5, description="Confidence threshold for tagging")
+    Threshold: float = Query(0.5, description="Confidence threshold for tagging"),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
     ):  # Text and tags input from the users   text_input = input("Enter the text to classify: ")
     labels = [label.strip() for label in Tags.split(',')]  #Creates an array for tags from the user input  #Comma is a key element for the word separaton   #Removes the space before an after each word after the comma # tag_input = input("Enter your labels separated by commas (e.g. urgent, phone, support): ")
     idkyet= 'true' 
@@ -52,5 +56,18 @@ def tagging_agent(
     for label, score in mapped:
         if score >= Threshold:
              return_list.append(label)
+    
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /tag",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
     
     return{"tags":return_list}

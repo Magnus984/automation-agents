@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from enum import Enum
 import requests
 from typing import Literal
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from typing import Dict, Union
+from api.core.dependencies.api_key_usage import send_report
 
 currency_converter = APIRouter()
 
@@ -600,7 +603,12 @@ class Currency(str, Enum):
 
 @currency_converter.get("/currency-converter", tags=["Currency Converter"])
 # def convert_currency(api_provider: RateSource, api_key: str, amount: float, from_currency: CurrencyEnum, to_currency: CurrencyEnum):
-def convert_currency(amount: float, from_currency: Currency, to_currency: Currency):
+def convert_currency(
+    amount: float,
+    from_currency: Currency,
+    to_currency: Currency,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     """Converts currency from one to another using live exchange rates."""
     # from_currency.name
     # EXCHANGE_API_URL = f"https://v6.exchangerate-api.com/v6/{api_key}/pair/"
@@ -624,6 +632,21 @@ def convert_currency(amount: float, from_currency: Currency, to_currency: Curren
         raise HTTPException(status_code=400, detail="Invalid currency or API error")
     result = response.json()
     
+    if auth["is_valid"] and result:
+        print("Sending report")
+        report = send_report(
+            auth,
+            auth['client'],
+            "GET /currency-converter",
+        )
+
+        print(report)
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+
     return {
         "amount": amount,
         "from_currency": from_currency,

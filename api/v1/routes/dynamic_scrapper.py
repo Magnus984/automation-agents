@@ -1,12 +1,14 @@
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, Depends
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Union
 import requests
 import uuid
 import subprocess
 import os
 import json
 import enum
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
 
 
 headers = {
@@ -42,10 +44,26 @@ class Status(str, enum.Enum):
 
 
 @dynamic_scrapper.get("/test-link")
-async def test_link(link: str):
+async def test_link(
+    link: str,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         response = requests.get(link, headers=headers)
         if response.status_code == 200:
+
+            if auth["is_valid"]:
+                report = send_report(
+                    auth,
+                    auth['client'],
+                    "GET /test-link",
+                )
+                if report.status == "error":
+                    raise HTTPException(
+                        status_code=report.status_code,
+                        detail=report.data.error
+                    )
+
             return "Successfully fetched the webpage!"
         else:
             return {
@@ -58,7 +76,10 @@ async def test_link(link: str):
 
 
 @dynamic_scrapper.post("/scrape")
-async def scrape_website(request: ScrapeRequest):
+async def scrape_website(
+    request: ScrapeRequest,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     unique_id = str(uuid.uuid4())  # Generate a unique file name for each request
     output_file = f"output_{unique_id}.json"
     
@@ -78,6 +99,18 @@ async def scrape_website(request: ScrapeRequest):
             data = json.load(f)
         
         os.remove(output_file)  # Cleanup the file after reading
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /scrape",
+            )
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
         return {"status": "success", "data": data}
     
     except subprocess.CalledProcessError as e:

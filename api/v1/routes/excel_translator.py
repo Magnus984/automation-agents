@@ -1,13 +1,21 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 import openpyxl
 from deep_translator import GoogleTranslator
 from io import BytesIO
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Union, Dict
 
 excel_translator = APIRouter(tags=["Excel Translator"])
 
 @excel_translator.post("/translate")
-async def translate_excel(file: UploadFile = File(...), source_language: str = 'auto', destination_language: str = 'es'):
+async def translate_excel(
+    file: UploadFile = File(...),
+    source_language: str = 'auto',
+    destination_language: str = 'es',
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     # Load the workbook from the uploaded file
     # contents = await file.read()
     wb = openpyxl.load_workbook(file.file)
@@ -45,6 +53,19 @@ async def translate_excel(file: UploadFile = File(...), source_language: str = '
     output.seek(0)
     
     original_filename = file.filename
+
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /translate",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
     
     return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                              headers={"Content-Disposition": f"attachment; filename=translated_{original_filename}"})

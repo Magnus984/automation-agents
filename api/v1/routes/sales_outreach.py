@@ -1,10 +1,13 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 import requests
 import smtplib
 import json
 from email.mime.text import MIMEText
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Dict, Union
 
 sales_outreach_router = APIRouter(tags=["Sales Outreach"])
 
@@ -146,11 +149,28 @@ def generate_message(name: str, email: EmailStr, company_name: str, role: str, p
 
 # API endpoint
 @sales_outreach_router.post("/sales_outreach")
-async def sales_outreach(request: MessageRequest):
+async def sales_outreach(
+    request: MessageRequest,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         # message = generate_message(linkedin_username)
         message = generate_message(request.name, request.email, request.company_name, request.role, request.product)
         # sent_email = send_email(request.email, message)
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /sales_outreach",
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+
         return {"message": message}
         # return {"message": message, "email": sent_email}
     except Exception as e:
