@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str
     SMTP_PASSWORD: str
     GOOGLE_API_KEY: str
+    ACCOUNTS_SERVICE_URL: str
     
     model_config = SettingsConfigDict(env_file=".env")
 
