@@ -1,11 +1,13 @@
 import tempfile
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 # from docling.document_converter import DocumentConverter
-from typing import List, Dict
+from typing import List, Dict, Union
 # from pydantic import BaseModel
 # import base64
 import os
 import re
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
 
 import pymupdf4llm
 # import pypandoc
@@ -56,7 +58,10 @@ def split_into_sections(markdown_content: str) -> Dict[str, str]:
     return sections
 
 @doc_splitter_2.post("/upload_file")
-async def upload_file(file: UploadFile = File(...)) -> Dict[str, str]:
+async def upload_file(
+    file: UploadFile = File(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ) -> Dict[str, str]:
     """
     Endpoint to upload a single file and save it to the upload folder.
     Args:
@@ -70,13 +75,26 @@ async def upload_file(file: UploadFile = File(...)) -> Dict[str, str]:
         with open(file_path, "wb") as buffer:
             buffer.write(await file.read())
         
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /upload_file"
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+
         return {"status": "success", "message": f"File '{file.filename}' uploaded successfully.", "path": file_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @doc_splitter_2.delete("/clear_folder")
-async def clear_folder():
+async def clear_folder(auth: Dict[str, Union[str, bool]] = Depends(auth_guard)):
     """
     Endpoint to clear all files from the upload folder.
     Returns:
@@ -88,6 +106,19 @@ async def clear_folder():
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             if os.path.isfile(file_path):
                 os.remove(file_path)
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "DELETE /clear_folder"
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
 
         return {"status": "success", "message": "Upload folder cleared successfully."}
     except Exception as e:
@@ -140,7 +171,9 @@ async def clear_folder():
 #         raise HTTPException(status_code=500, detail=f"Failed to consolidate files: {str(e)}")
 
 @doc_splitter_2.post("/consolidate_docs", response_model=ConsolidationResponse)
-async def document_consolidator() -> ConsolidationResponse:
+async def document_consolidator(
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ) -> ConsolidationResponse:
     """
     Endpoint to fetch all files from the upload folder, convert them to markdown, and consolidate content by headings.
     Returns:
@@ -176,6 +209,19 @@ async def document_consolidator() -> ConsolidationResponse:
 
             except Exception as e:
                 continue  # Skip this file and continue with the next one
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /consolidate_docs"
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
 
         # Return the response using the Pydantic model
         return ConsolidationResponse(headers=headers, content=section_content)

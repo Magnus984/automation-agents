@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends, HTTPException
 import requests
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Dict, Union
 
 lead_enrichment = APIRouter(tags=["Lead Enrichment"])
 
@@ -10,6 +13,7 @@ def find_leads(
     company_name: str = Query(..., description="Company name. eg. 4th-ir"),
     company_domain: str = Query(..., description="Company domain. e.g: https://4th-ir.com/"),
     target_role: str = Query(..., description="Target role"),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
 ):
     try: 
         """
@@ -49,6 +53,18 @@ def find_leads(
         if person["email_quality"]["status"] == "valid"
         ]
 
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "GET /lead_enrichment",
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
         return filtered_results
     
     except Exception as e:

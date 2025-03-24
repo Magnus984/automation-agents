@@ -1,8 +1,10 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
 from docling.document_converter import DocumentConverter
-from typing import List, Dict
+from typing import List, Dict, Union
 import os
 import re
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
 
 # import markdown
 
@@ -37,7 +39,10 @@ def split_into_sections(markdown_content: str) -> Dict[str, str]:
     return sections
 
 @doc_splitter.post("/process-doc_splitter/")
-async def document_section_splitter(files: List[UploadFile] = File(...)) :
+async def document_section_splitter(
+    files: List[UploadFile] = File(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ) :
     """
     Endpoint to accept files, convert them to markdown using docling, and split into sections.
     """
@@ -65,4 +70,16 @@ async def document_section_splitter(files: List[UploadFile] = File(...)) :
         # Clean up: Delete the temporary file
         os.remove(file_path)
 
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /process-doc_splitter/",
+        )
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+        
     return results

@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_version_one)
+app.include_router(api_version_one, prefix=settings.API_V1_STR)
 
 @app.get("/", tags=["Home"],)
 async def get_root() -> dict:

@@ -10,15 +10,34 @@ from api.v1.schemas.response_model import (
 from api.utils.keywordextractor import extract_keywords
 from api.core.dependencies.llm import analyze_emails
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Union
 import base64
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
 
 email_reading = APIRouter(tags=["Email Reading Tools"])
 
 @email_reading.post("/extract_keywords")
-async def api_extract_keywords(text):
+async def api_extract_keywords(
+    text,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         keywords = extract_keywords(text)
+
+        if auth["is_valid"]:
+                report = send_report(
+                    auth,
+                    auth['client'],
+                    "GET /analyze_emails",
+                )
+
+                if report.status == "error":
+                    raise HTTPException(
+                        status_code=report.status_code,
+                        detail=report.data.error
+                    )
+
         return JSONResponse({"keywords": keywords})
     except Exception as e:
         raise HTTPException(
@@ -31,10 +50,27 @@ class EmailRequest(BaseModel):
 
 
 @email_reading.post("/analyze_emails")
-async def api_analyze_emails(request: EmailRequest, question):
+async def api_analyze_emails(
+    question,
+    request: EmailRequest, 
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         response = analyze_emails(request.emails, question)
         if response:
+            if auth["is_valid"]:
+                report = send_report(
+                    auth,
+                    auth['client'],
+                    "GET /analyze_emails",
+                )
+
+                if report.status == "error":
+                    raise HTTPException(
+                        status_code=report.status_code,
+                        detail=report.data.error
+                    )
+
             return JSONResponse({"response": response})
         else:
             raise HTTPException(
@@ -59,7 +95,10 @@ async def api_analyze_emails(request: EmailRequest, question):
                             "description": "Failed to encode text"
                           }
             })
-def text_to_base64(request: EncodeText):
+def text_to_base64(
+    request: EncodeText,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     """Converts text to base64 encoding"""
     try:
         # converts text to bytes
@@ -74,13 +113,27 @@ def text_to_base64(request: EncodeText):
                 "encoded_data": f"{encoded_data.decode()}"
             }
         )
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "GET /encode",
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+        
         return success_response
     except Exception as e:
         error_response = ErrorResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="Failed to encode text",
             data=ErrorData(
-                str(e), type(e).__name
+                error=str(e), error_type=type(e).__name__
             )
         )
         return error_response
@@ -98,7 +151,10 @@ def text_to_base64(request: EncodeText):
                             "description": "Failed to decode text"
                           }
             })
-def base64_to_text(request: DecodeText):
+def base64_to_text(
+    request: DecodeText,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     """Converts base64 encoding to text"""
     try:
         # convert encoding to bytes
@@ -114,6 +170,20 @@ def base64_to_text(request: DecodeText):
                 "decoded_data": f"{decoded_data.decode()}"
             }
         )
+
+        if auth["is_valid"]:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /decode",
+            )
+
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+        
         return success_response
     except Exception as e:
         error_response = ErrorResponse(

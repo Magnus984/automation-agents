@@ -1,9 +1,12 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 import requests
 import pdfplumber
 import json
 import re
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Union, Dict
 
 
 screening_analyst = APIRouter(tags=["Screening Analyst"])
@@ -53,7 +56,8 @@ def match_resumes(job_text, resumes_text):
 @screening_analyst.post("/match-resumes/")
 async def match_resumes_to_job(
     job_description: UploadFile = File(...),
-    resume: UploadFile = File(...)
+    resume: UploadFile = File(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
 ):
 
     job_text = extract_text_from_pdf(job_description.file)
@@ -74,6 +78,19 @@ async def match_resumes_to_job(
     for i, resume in enumerate(resumes_data):
         resume["similarity_score"] = round(similarity_scores[i], 2)
 
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /match-resumes",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+        
     return {
         "job": job_description.filename,
         "matched_resumes": resumes_data

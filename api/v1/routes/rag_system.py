@@ -1,16 +1,24 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 import requests
 from PyPDF2 import PdfReader
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 import openai
 import io
 import numpy as np
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Dict, Union
 
 rag_system = APIRouter(tags=["Rag System"])
 
 
 @rag_system.post("/set_credentials/")
-async def set_credentials(openai_key: str = Form(...), database_name: str = Form(...), mongodb_uri: str = Form(...)):
+async def set_credentials(
+    openai_key: str = Form(...),
+    database_name: str = Form(...),
+    mongodb_uri: str = Form(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     global user_openai_key, user_mongodb_uri
 
     # Store the user's OpenAI key and MongoDB URI
@@ -30,6 +38,19 @@ async def set_credentials(openai_key: str = Form(...), database_name: str = Form
     files_collection = db["files"]
     tags_collection = db["tags"]
 
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /set_credentials",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+            
     return {"message": "Credentials set successfully!"}
 
 def generate_embedding(text: str):
@@ -54,7 +75,10 @@ def tag(text: str, tags: list[str]):
     
 
 @rag_system.post("/upload/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
    
     extracted_text = ""
     
@@ -101,6 +125,19 @@ async def upload_file(file: UploadFile = File(...)):
         }
         
         result = await files_collection.insert_one(file_doc)
+
+        if auth["is_valid"] and result:
+            report = send_report(
+                auth,
+                auth['client'],
+                "POST /upload",
+            )
+            if report.status == "error":
+                raise HTTPException(
+                    status_code=report.status_code,
+                    detail=report.data.error
+                )
+
         print("embeddings inserted into db")
         return {"file_id": str(result.inserted_id), "filename": file.filename, "tags": identified_tags}
     
@@ -109,7 +146,10 @@ async def upload_file(file: UploadFile = File(...)):
     
 
 @rag_system.get("/query/")
-async def query_database(query: str):
+async def query_database(
+    query: str,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         db_tags = [tag_doc["tag"] async for tag_doc in tags_collection.find({}, {"_id": 0, "tag": 1})]
         query_tags = tag(query, db_tags)
@@ -150,10 +190,26 @@ async def query_database(query: str):
                   {"role": "user", "content": f"Answer based on this document:\n{most_relevant_text}\n\nQuery: {query}"}]
     )
 
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "GET /query",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+    
     return {"response": chat_response.choices[0].message.content}
 
 @rag_system.post("/add_tag/")
-async def add_tag(tag: str):
+async def add_tag(
+    tag: str,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     try:
         # Find the file in MongoDB
         if await tags_collection.find_one({"tag": tag}):
@@ -161,12 +217,28 @@ async def add_tag(tag: str):
         # Insert the new tag into the tags collection
         await tags_collection.insert_one({"tag": tag})
     except Exception:
-        raise HTTPException(status_code=404, detail=str("Database not found. Kindly set credentials above.")) 
+        raise HTTPException(status_code=404, detail=str("Database not found. Kindly set credentials above."))
+
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /add_tag",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+
     return {"message": f"Tag '{tag}' added successfully"}
 
 # Endpoint to view all tags for a specific file
 @rag_system.get("/get_tags/")
-async def view_tags():
+async def view_tags(
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     # Retrieve all tags from the tags collection
     tags = []
     try:
@@ -175,11 +247,27 @@ async def view_tags():
     except Exception:
         raise HTTPException(status_code=404, detail=str("Database not found. Kindly set credentials above.")) 
     
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "GET /get_tags",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+        
     return {"tags": tags}
 
 # Endpoint to delete a tag from a file
 @rag_system.delete("/delete_tag/")
-async def delete_tag(tag_name: str):
+async def delete_tag(
+    tag_name: str,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
     # Find the file in MongoDB
     try: 
         if not await tags_collection.find_one({"tag": tag_name}):
@@ -193,4 +281,18 @@ async def delete_tag(tag_name: str):
         raise
     except Exception:
         raise HTTPException(status_code=404, detail="Database not found. Kindly set credentials above.") 
+    
+    if auth["is_valid"]:
+        report = send_report(
+            auth,
+            auth['client'],
+            "DELETE /delete_tag",
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
+        
     return {"message": f"Tag '{tag_name}' deleted successfully"}

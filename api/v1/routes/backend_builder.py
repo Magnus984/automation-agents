@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 import requests
 import base64
 from api.core.config import settings
+from api.v1.routes.auth import auth_guard
+from api.core.dependencies.api_key_usage import send_report
+from typing import Dict, Union
 # import subprocess
 # import git
 # import os
@@ -41,7 +44,28 @@ def create_github_repo(github_username, github_token):
     
 @backend_builder.post("/generate")
 # def generate_backend(data: SchemaInput):
-def generate_backend(mongo_uri: str, db_name: str, github_username: str, github_token: str, input_schema: dict):
+def generate_backend(
+    mongo_uri: str, db_name: str, github_username: str,
+    github_token: str, input_schema: dict,
+    auth: Dict[str, Union[str, bool]] = Depends(auth_guard)
+    ):
+    # generate doc strings
+    """
+    Generate a FastAPI backend from a MongoDB schema
+    
+    Args:
+        mongo_uri: The MongoDB URI
+        db_name: The MongoDB database name
+        github_username: The GitHub username
+        github_token: The GitHub token
+        input_schema: The MongoDB schema
+        client: The authenticated client which could be Uipath, Web, etc.
+
+    Returns:
+        The GitHub repository URL
+    """
+
+
     create_github_repo(github_username, github_token)
     # mongo_uri = f"mongodb+srv://{data.username}:{data.password}@primarycluster.jc2ou.mongodb.net/?retryWrites=true&w=majority"
     uri = mongo_uri
@@ -135,6 +159,19 @@ if __name__ == "__main__":
     
     github_repo_url = f"https://github.com/{github_username}/{REPO_NAME}"
     # return {"file": FileResponse(file_path, media_type='application/octet-stream', filename="generated_backend.py"), "repo_link": github_repo_url}
+
+    if auth["is_valid"] and github_repo_url:
+        report = send_report(
+            auth,
+            auth['client'],
+            "POST /generate"
+        )
+
+        if report.status == "error":
+            raise HTTPException(
+                status_code=report.status_code,
+                detail=report.data.error
+            )
     return {"repo_link": github_repo_url}
 
     # return FileResponse(file_path, media_type='application/octet-stream', filename="generated_backend.py")
